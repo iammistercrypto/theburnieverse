@@ -17,6 +17,7 @@
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.87.1",
     "@uniswap/widgets": "^2.59.0",
+    "@upstash/redis": "^1.35.3",
     "@wagmi/chains": "^1.8.0",
     "@wagmi/connectors": "^5.9.9",
     "@wagmi/core": "^2.20.3",
