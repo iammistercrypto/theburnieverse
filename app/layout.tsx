@@ -103,6 +103,9 @@ export default function RootLayout({
           {`globalThis.litDevMode = false;`}
         </Script>
 
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="format-detection" content="telephone=no" />
+
         {/* Fallback OG/Twitter for older crawlers */}
         <meta property="og:title" content="Based Burnie Mini App" />
         <meta

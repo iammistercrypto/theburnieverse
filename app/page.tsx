@@ -333,17 +333,17 @@ useEffect(() => {
     });
     return null;
   }, []);
-  /* ---------- WalletConnect ---------- */
+    /* ---------- WalletConnect ---------- */
   const wcProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
   const wcConnector = useMemo(() => {
     if (!wcProjectId) return null;
     return walletConnect({
       projectId: wcProjectId,
-      showQrModal: true,
+      showQrModal: false, // ⬅️ important on mobile (we'll guide users to CW instead)
       metadata: {
         name: "BurnieVerse",
         description: "Vote on the lore for BurnieVerse on Base",
-        url: process.env.NEXT_PUBLIC_SITE_URL || "https://burnieverse.app",
+        url: process.env.NEXT_PUBLIC_URL || "https://theburnieverse.vercel.app",
         icons: [
           process.env.NEXT_PUBLIC_ICON_URL ||
             "https://pbs.twimg.com/media/GzcMDP_XwAAYV-u.jpg",
@@ -1267,10 +1267,10 @@ async function handleBuyBurnClick(
           {/* Header: single entry + picker */}
           <header className="relative z-50 mb-4">
   {isMounted && (
-    <div className="flex items-center justify-between gap-2 h-12">
+    <div className="flex items-center justify-between gap-2 h-12 w-full">
       {!isConnected ? (
         <div className="relative flex items-center gap-2 w-full">
-          {/* If inside Coinbase MiniApp or CW webview → force Coinbase Wallet */}
+          {/* 1) Inside Coinbase Mini App OR CW dapp browser → native connect */}
           {isMiniApp || isCwWebview ? (
             <button
               type="button"
@@ -1280,8 +1280,22 @@ async function handleBuyBurnClick(
               🟠 Connect Coinbase Wallet
             </button>
           ) : (
-            /* Everywhere else → RainbowKit modal */
-            <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance />
+            <>
+              {/* 2) Regular browser → RainbowKit button … */}
+              <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
+              {/* …and on mobile give a direct deep link to CW */}
+              {isMobile && (
+                <button
+                  type="button"
+                  className="ignite btn-no-shift ready-cta--base"
+                  onMouseDown={(e) => ignite(e)}
+                  onClick={openCoinbaseWallet}
+                  title="Open in Coinbase Wallet"
+                >
+                  ↗ Open in Coinbase Wallet
+                </button>
+              )}
+            </>
           )}
 
           {readAck && (
@@ -1290,9 +1304,7 @@ async function handleBuyBurnClick(
               className="ignite chip chip--bright ml-auto"
               onClick={() => {
                 setReadAck(false);
-                try {
-                  localStorage.removeItem("bv_readAck");
-                } catch {}
+                try { localStorage.removeItem("bv_readAck"); } catch {}
                 setSelectedVote(null);
                 setPreviewVote(null);
               }}
@@ -1341,9 +1353,7 @@ async function handleBuyBurnClick(
               className="ignite chip chip--bright"
               onClick={() => {
                 setReadAck(false);
-                try {
-                  localStorage.removeItem("bv_readAck");
-                } catch {}
+                try { localStorage.removeItem("bv_readAck"); } catch {}
                 setSelectedVote(null);
                 setPreviewVote(null);
               }}
@@ -1357,6 +1367,7 @@ async function handleBuyBurnClick(
     </div>
   )}
 </header>
+
 
           {!address && (
             <p className="error-message text-sm text-[var(--ock-text-error)]">
