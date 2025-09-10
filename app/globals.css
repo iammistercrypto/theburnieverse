@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --app-background: #ffffff;
+  --app-foreground: #333333;
+  --app-gray: #e5e7eb;
+  --app-accent: #0052FF;
+  --ock-text-foreground-muted: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111111;
+    --foreground: #ffffff;
+    --app-background: #111111;
+    --app-foreground: #ffffff;
+    --app-gray: #374151;
+    --app-accent: #4d94ff;
+    --ock-text-foreground-muted: #9ca3af;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Geist", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 80%;
+}
+
+.animate-fade-out {
+  animation: fadeOut 2s forwards;
+}
+
+.mini-app-theme {
+       background: linear-gradient(to bottom, var(--background), var(--app-gray));
+     }
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}

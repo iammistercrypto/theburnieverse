@@ -1,0 +1,35 @@
+{
+  "name": "Based Burnie Mini App",
+  "short_name": "BurnieVerse",
+  "description": "Vote with $BURN in the BurnieVerse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#ff4500",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 16x16",
+      "type": "image/x-icon"
+    },
+    {
+  "src": "/icon-512-maskable.png",
+  "sizes": "512x512",
+  "type": "image/png",
+  "purpose": "maskable"
+}
+
+  ]
+}
