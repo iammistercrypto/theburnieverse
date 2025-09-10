@@ -1037,4 +1037,15 @@ button[role="combobox"] {
   background: #1f1f1f !important; /* subtle dark hover background */
   border-radius: 50%;             /* keep it circular */
 }
+/* Force RainbowKit modal to stay dark on mobile */
+[data-rk] {
+  /* Modal surface + text */
+  --rk-colors-modalBackdrop: rgba(0,0,0,0.66);
+  --rk-colors-modalBackground: #111111;
+  --rk-colors-modalText: #ffffff;
+
+  /* Buttons / accents keep your brand */
+  --rk-colors-accentColor: #ff4500;
+  --rk-colors-accentColorForeground: #ffffff;
+}
 
