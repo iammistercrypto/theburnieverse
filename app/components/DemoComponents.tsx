@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import React, { type ReactNode, useState } from "react";
 
 type ButtonProps = {
   children: ReactNode;
@@ -11,7 +11,7 @@ type ButtonProps = {
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
   icon?: ReactNode;
-}
+};
 
 export function Button({
   children,
@@ -61,14 +61,9 @@ type CardProps = {
   children: ReactNode;
   className?: string;
   onClick?: () => void;
-}
+};
 
-export function Card({
-  title,
-  children,
-  className = "",
-  onClick,
-}: CardProps) {
+export function Card({ title, children, className = "", onClick }: CardProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onClick && (e.key === "Enter" || e.key === " ")) {
       e.preventDefault();
@@ -86,9 +81,7 @@ export function Card({
     >
       {title && (
         <div className="px-5 py-3 border-b border-[var(--app-card-border)]">
-          <h3 className="text-lg font-medium text-[var(--foreground)]">
-            {title}
-          </h3>
+          <h3 className="text-lg font-medium text-[var(--foreground)]">{title}</h3>
         </div>
       )}
       <div className="p-5">{children}</div>
@@ -100,7 +93,7 @@ type IconProps = {
   name: "heart" | "star" | "check" | "plus" | "arrow-right";
   size?: "sm" | "md" | "lg";
   className?: string;
-}
+};
 
 export function Icon({ name, size = "md", className = "" }: IconProps) {
   const sizeClasses = {
@@ -111,77 +104,37 @@ export function Icon({ name, size = "md", className = "" }: IconProps) {
 
   const icons = {
     heart: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <title>Heart</title>
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
       </svg>
     ),
     star: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <title>Star</title>
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
       </svg>
     ),
     check: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <title>Check</title>
         <polyline points="20 6 9 17 4 12" />
       </svg>
     ),
     plus: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <title>Plus</title>
         <line x1="12" y1="5" x2="12" y2="19" />
         <line x1="5" y1="12" x2="19" y2="12" />
       </svg>
     ),
     "arrow-right": (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <title>Arrow Right</title>
         <line x1="5" y1="12" x2="19" y2="12" />
         <polyline points="12 5 19 12 12 19" />
@@ -189,18 +142,14 @@ export function Icon({ name, size = "md", className = "" }: IconProps) {
     ),
   };
 
-  return (
-    <span className={`inline-block ${sizeClasses[size]} ${className}`}>
-      {icons[name]}
-    </span>
-  );
+  return <span className={`inline-block ${sizeClasses[size]} ${className}`}>{icons[name]}</span>;
 }
 
 type Todo = {
   id: number;
   text: string;
   completed: boolean;
-}
+};
 
 export function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([
@@ -212,9 +161,7 @@ export function TodoList() {
 
   const addTodo = () => {
     if (newTodo.trim() === "") return;
-
-    const newId =
-      todos.length > 0 ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
+    const newId = todos.length > 0 ? Math.max(...todos.map((t) => t.id)) + 1 : 1;
     setTodos([...todos, { id: newId, text: newTodo, completed: false }]);
     setNewTodo("");
   };
@@ -222,8 +169,8 @@ export function TodoList() {
   const toggleTodo = (id: number) => {
     setTodos(
       todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-      ),
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
     );
   };
 
@@ -232,9 +179,7 @@ export function TodoList() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      addTodo();
-    }
+    if (e.key === "Enter") addTodo();
   };
 
   return (
@@ -249,12 +194,7 @@ export function TodoList() {
             placeholder="Add a new task..."
             className="flex-1 px-3 py-2 bg-[var(--app-card-bg)] border border-[var(--app-card-border)] rounded-lg text-[var(--foreground)] placeholder-[var(--app-foreground-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--app-accent)]"
           />
-          <Button
-            variant="primary"
-            size="md"
-            onClick={addTodo}
-            icon={<Icon name="plus" size="sm" />}
-          >
+          <Button variant="primary" size="md" onClick={addTodo} icon={<Icon name="plus" size="sm" />}>
             Add
           </Button>
         </div>
@@ -273,17 +213,13 @@ export function TodoList() {
                       : "border-[var(--app-foreground-muted)] bg-transparent"
                   }`}
                 >
-                  {todo.completed && (
-                    <Icon
-                      name="check"
-                      size="sm"
-                      className="text-[var(--background)]"
-                    />
-                  )}
+                  {todo.completed && <Icon name="check" size="sm" className="text-[var(--background)]" />}
                 </button>
                 <label
                   htmlFor={`todo-${todo.id}`}
-                  className={`text-[var(--app-foreground-muted)] cursor-pointer ${todo.completed ? "line-through opacity-70" : ""}`}
+                  className={`text-[var(--app-foreground-muted)] cursor-pointer ${
+                    todo.completed ? "line-through opacity-70" : ""
+                  }`}
                 >
                   {todo.text}
                 </label>

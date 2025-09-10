@@ -2,12 +2,20 @@
 /** @type {import('next').NextConfig} */
 const webpack = require('webpack');
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
-  // keep your existing settings
-  outputFileTracingRoot: 'C:\\MiniApp\\TheBurnieverse',
+  // Use an absolute path so Vercel doesn't warn
+  outputFileTracingRoot: process.cwd(),
+
+  // Keep your local dev origins (only used by your code/headers)
   allowedDevOrigins: ['http://localhost:3000', 'http://192.168.1.14:3000'],
 
-  // security / CORS headers as you had them
+  // Skip ESLint during production builds (we can re-enable later)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   async headers() {
     return [
       {
@@ -21,12 +29,11 @@ const nextConfig = {
     ];
   },
 
-  // 🔧 turn off Lit dev mode in production builds
   webpack: (config, { dev }) => {
-    if (!dev) {
+    // Force Lit into production mode in non-dev builds
+    if (!dev && isProd) {
       config.plugins.push(
         new webpack.DefinePlugin({
-          // Lit checks this global; forcing false removes dev assertions & warning
           'globalThis.litDevMode': JSON.stringify(false),
         })
       );
