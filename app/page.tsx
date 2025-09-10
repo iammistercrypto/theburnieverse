@@ -536,6 +536,24 @@ await (window as any).walletConnectModal.openModal();
     }
   }, []);
 
+  // Force WalletConnect (Web3Modal) dark theme + colors
+useEffect(() => {
+  try {
+    // Make sure the modal renders in dark mode
+    document.documentElement.setAttribute('data-wcm-theme', 'dark');
+    const root = document.documentElement.style;
+
+    // Set WC modal CSS variables (fallbacks if init options are ignored)
+    root.setProperty('--wcm-accent-color', '#ff4500');
+    root.setProperty('--wcm-background-color', '#0b0e14');
+    root.setProperty('--wcm-primary-color', '#ffffff');
+    root.setProperty('--wcm-text-secondary-color', '#d1d5db');
+    root.setProperty('--wcm-overlay-background', 'rgba(0,0,0,0.66)');
+    root.setProperty('--wcm-font-family', 'Geist, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif');
+  } catch {}
+}, []);
+
+
   // If user lands inside Coinbase Wallet's dapp browser and isn't connected,
 // pop the RainbowKit modal automatically to complete the connection.
 useEffect(() => {
