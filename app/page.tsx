@@ -1764,7 +1764,7 @@ async function handleBuyBurnClick(
                       </div>
                       {(isMiniApp || isCwWebview) && (
                         <span className="text-[10px] opacity-70 mt-1 block">
-                          Powered by Coinbase Wallet Swap on Base
+                          Built on Base with OnchainKit and MiniApp
                         </span>
                       )}
                     </>
