@@ -25,9 +25,11 @@ import { walletConnect, coinbaseWallet } from "@wagmi/connectors";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { base } from "wagmi/chains";
 import "./theme.css";
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton, useConnectModal } from "@rainbow-me/rainbowkit";
 import '@rainbow-me/rainbowkit/styles.css';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+
+
 
 /* ---------- FX helpers (spark trail + parallax) ---------- */
 function useSparkTrail(enabled = true) {
@@ -160,6 +162,15 @@ function fireWarp() {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 900);
   } catch {}
+}
+function openInCoinbaseDapp(url?: string) {
+  if (typeof window === "undefined") return;
+  const target = url || window.location.href; // your live page
+  // Universal link that opens CW's in-app browser on your URL
+  const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(
+    target
+  )}`;
+  window.location.href = deeplink;
 }
 /* ---------- Wallet UI (OnchainKit) ---------- */
 const DynamicWallet = dynamic(
@@ -308,6 +319,8 @@ useEffect(() => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect } = useConnect();
+  // RainbowKit: programmatic open of the connect modal
+const { openConnectModal } = useConnectModal();
   const prevVotedAnyRef = useRef<boolean>(false);
   const track = (name: string) => {
     try {
@@ -486,6 +499,18 @@ useEffect(() => {
       } catch {}
     }
   }, []);
+
+  // If user lands inside Coinbase Wallet's dapp browser and isn't connected,
+// pop the RainbowKit modal automatically to complete the connection.
+useEffect(() => {
+  if (!isMounted) return;
+  let done = false; // guard for a single open per visit
+  if (!isConnected && isCwWebview && openConnectModal && !done) {
+    done = true;
+    setTimeout(() => openConnectModal(), 400); // let UI settle first
+  }
+}, [isMounted, isCwWebview, isConnected, openConnectModal]);
+
   /* ---------- Voting readouts ---------- */
   const BURN_READ_ABI = [
     "function balanceOf(address) view returns (uint256)",
@@ -1270,16 +1295,18 @@ async function handleBuyBurnClick(
     <div className="flex items-center justify-between gap-2 h-12">
       {!isConnected ? (
         <div className="relative flex items-center gap-2 w-full">
-          {/* MOBILE / EMBEDDED: Only show Coinbase button */}
+          {/* A) Inside Coinbase Mini App OR Coinbase Wallet's dapp browser */}
           {(isMiniApp || isCwWebview) ? (
             <button
               type="button"
               className="ready-cta--base w-full sm:w-auto"
               onClick={() => {
                 try {
-                  // deeplink into Coinbase Wallet directly
-                  const returnUrl = typeof window !== "undefined" ? window.location.href : "";
-                  const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(returnUrl)}`;
+                  const href =
+                    typeof window !== "undefined" ? window.location.href : "";
+                  const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(
+                    href
+                  )}`;
                   window.location.href = deeplink;
                 } catch {}
               }}
@@ -1288,12 +1315,54 @@ async function handleBuyBurnClick(
               ↗ Open in Coinbase Wallet
             </button>
           ) : (
-            // EVERYWHERE ELSE: RainbowKit modal with all wallets
-            <ConnectButton
-              showBalance
-              chainStatus="icon"
-              accountStatus="address"
-            />
+            <>
+              {/* B) On mobile Safari/Chrome (NOT in Coinbase) → show two buttons */}
+              {isMobile ? (
+                <div className="flex w-full gap-2">
+                  <button
+                    type="button"
+                    className="ready-cta--base flex-1"
+                    onClick={() => {
+                      try {
+                        const href =
+                          typeof window !== "undefined"
+                            ? window.location.href
+                            : "";
+                        const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(
+                          href
+                        )}`;
+                        window.location.href = deeplink;
+                      } catch {}
+                    }}
+                    aria-label="Open in Coinbase Wallet"
+                  >
+                    ↗ Open in Coinbase Wallet
+                  </button>
+
+                  {/* "Other Wallets" = RainbowKit modal trigger */}
+                  <ConnectButton.Custom>
+                    {({ openConnectModal }) => (
+                      <button
+                        type="button"
+                        onClick={openConnectModal}
+                        className="ignite chip chip--bright px-3 py-2 rounded-lg font-semibold"
+                        style={{ minHeight: 44 }}
+                        aria-label="Connect with other wallets"
+                      >
+                        Other Wallets
+                      </button>
+                    )}
+                  </ConnectButton.Custom>
+                </div>
+              ) : (
+                /* C) Desktop → standard RainbowKit button with all options */
+                <ConnectButton
+                  showBalance
+                  chainStatus="icon"
+                  accountStatus="address"
+                />
+              )}
+            </>
           )}
 
           {readAck && (
@@ -1302,7 +1371,9 @@ async function handleBuyBurnClick(
               className="ignite chip chip--bright ml-auto"
               onClick={() => {
                 setReadAck(false);
-                try { localStorage.removeItem("bv_readAck"); } catch {}
+                try {
+                  localStorage.removeItem("bv_readAck");
+                } catch {}
                 setSelectedVote(null);
                 setPreviewVote(null);
               }}
@@ -1348,7 +1419,9 @@ async function handleBuyBurnClick(
               className="ignite chip chip--bright"
               onClick={() => {
                 setReadAck(false);
-                try { localStorage.removeItem("bv_readAck"); } catch {}
+                try {
+                  localStorage.removeItem("bv_readAck");
+                } catch {}
                 setSelectedVote(null);
                 setPreviewVote(null);
               }}
