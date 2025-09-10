@@ -1267,35 +1267,33 @@ async function handleBuyBurnClick(
           {/* Header: single entry + picker */}
           <header className="relative z-50 mb-4">
   {isMounted && (
-    <div className="flex items-center justify-between gap-2 h-12 w-full">
+    <div className="flex items-center justify-between gap-2 h-12">
       {!isConnected ? (
         <div className="relative flex items-center gap-2 w-full">
-          {/* 1) Inside Coinbase Mini App OR CW dapp browser → native connect */}
-          {isMiniApp || isCwWebview ? (
+          {/* MOBILE / EMBEDDED: Only show Coinbase button */}
+          {(isMiniApp || isCwWebview) ? (
             <button
               type="button"
-              className="ignite connect-wallet w-full sm:w-auto bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-[var(--background)] rounded-lg px-4 py-2 font-semibold transition-all hover:shadow-[0_0_6px_var(--app-accent)] hover:scale-[1.02]"
-              onClick={openCoinbaseWallet}
+              className="ready-cta--base w-full sm:w-auto"
+              onClick={() => {
+                try {
+                  // deeplink into Coinbase Wallet directly
+                  const returnUrl = typeof window !== "undefined" ? window.location.href : "";
+                  const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(returnUrl)}`;
+                  window.location.href = deeplink;
+                } catch {}
+              }}
+              aria-label="Open in Coinbase Wallet"
             >
-              🟠 Connect Coinbase Wallet
+              ↗ Open in Coinbase Wallet
             </button>
           ) : (
-            <>
-              {/* 2) Regular browser → RainbowKit button … */}
-              <ConnectButton accountStatus="avatar" chainStatus="icon" showBalance={false} />
-              {/* …and on mobile give a direct deep link to CW */}
-              {isMobile && (
-                <button
-                  type="button"
-                  className="ignite btn-no-shift ready-cta--base"
-                  onMouseDown={(e) => ignite(e)}
-                  onClick={openCoinbaseWallet}
-                  title="Open in Coinbase Wallet"
-                >
-                  ↗ Open in Coinbase Wallet
-                </button>
-              )}
-            </>
+            // EVERYWHERE ELSE: RainbowKit modal with all wallets
+            <ConnectButton
+              showBalance
+              chainStatus="icon"
+              accountStatus="address"
+            />
           )}
 
           {readAck && (
@@ -1318,10 +1316,7 @@ async function handleBuyBurnClick(
         <div className="flex items-center gap-2 flex-wrap w-full">
           <DynamicWallet>
             <DynamicWalletDropdown>
-              <Identity
-                className="px-4 pt-3 pb-2 rounded-lg border border-[var(--app-card-border)] bg-[var(--app-card-bg)]"
-                hasCopyAddressOnClick
-              >
+              <Identity className="px-4 pt-3 pb-2 rounded-lg border border-[var(--app-card-border)] bg-[var(--app-card-bg)]" hasCopyAddressOnClick>
                 <Avatar />
                 <Name />
                 <Address />
