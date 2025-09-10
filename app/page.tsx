@@ -1,6 +1,7 @@
 "use client";
 import { BURN_ADDRESS, VOTE_ABI, VOTING_ADDRESS, BASE_CHAIN_ID } from "../lib/constants";
 
+
 import {
   Name,
   Identity,
@@ -139,6 +140,36 @@ function useParallax(ref: React.RefObject<HTMLElement>, strength = 12) {
     };
   }, [ref, strength]);
 }
+
+// Minimal typing for WalletConnect Modal CSS variables
+type WcThemeVars = Partial<Record<
+  | "--wcm-accent-color"
+  | "--wcm-accent-fill-color"
+  | "--wcm-background-color"
+  | "--wcm-foreground-color"
+  | "--wcm-primary-color"
+  | "--wcm-secondary-color"
+  | "--wcm-text-secondary-color"
+  | "--wcm-overlay-background"
+  | "--wcm-font-family"
+  | "--wcm-z-index",
+  string
+>>;
+
+const wcDarkVars: WcThemeVars = {
+  "--wcm-accent-color": "#ff4500",
+  "--wcm-accent-fill-color": "#ffffff",
+  "--wcm-background-color": "#111111",
+  "--wcm-foreground-color": "#1a1a1a",
+  "--wcm-primary-color": "#ffffff",
+  "--wcm-secondary-color": "#d1d5db",
+  "--wcm-text-secondary-color": "#d1d5db",
+  "--wcm-overlay-background": "rgba(0,0,0,0.66)",
+  "--wcm-font-family":
+    'Geist, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  "--wcm-z-index": "2147483647",
+};
+
 /* ---------- Ignite ripple helper ---------- */
 const ignite = (e: React.MouseEvent<HTMLElement | Element>) => {
   const t = e.currentTarget as HTMLElement;
@@ -386,15 +417,20 @@ const { openConnectModal } = useConnectModal();
       if (!wcProjectId || isMiniApp || isCwWebview) return;
       try {
         const mod = await import("@walletconnect/modal");
-        // Check if WalletConnect modal is already initialized
-        if (!(window as any).walletConnectModal) {
-          (window as any).walletConnectModal = new mod.WalletConnectModal({
-            projectId: wcProjectId,
-            themeMode: "dark",
-            explorerRecommendedWalletIds: "NONE",
-          });
-        }
-        await (window as any).walletConnectModal.openModal();
+
+// Only create once
+if (!(window as any).walletConnectModal) {
+  (window as any).walletConnectModal = new mod.WalletConnectModal({
+    projectId: wcProjectId,
+    themeMode: "dark",
+    explorerRecommendedWalletIds: "NONE",
+    themeVariables: wcDarkVars, // ✅ strongly typed locally
+  });
+}
+
+await (window as any).walletConnectModal.openModal();
+
+
       } catch {
         setNotification({
           message: "Couldn’t open WalletConnect. Please check configuration.",
