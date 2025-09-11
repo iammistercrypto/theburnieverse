@@ -18,19 +18,54 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// ✅ Dynamic metadata for Base Mini App (frame) embeds.
-// Reads from env so you can tweak without code changes.
+// ✅ Dynamic metadata for Base Mini App embeds (fc:miniapp + fc:frame)
 export async function generateMetadata(): Promise<Metadata> {
-  const URL = process.env.NEXT_PUBLIC_URL || "https://example.com";
-  const ogImage = process.env.NEXT_PUBLIC_APP_OG_IMAGE || "/burnie-og.png";
-  const hero = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || ogImage;
+  const SITE_URL = process.env.NEXT_PUBLIC_URL || "https://example.com";
+  const title =
+    process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Based Burnie Mini App";
+  const description =
+    process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Vote with $BURN in the BurnieVerse";
+
+  const ogImage = process.env.NEXT_PUBLIC_APP_OG_IMAGE || "/burnie-og.png"; // 1200x630
+  const hero = process.env.NEXT_PUBLIC_APP_HERO_IMAGE || ogImage;            // preview
+  const splash = process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE || ogImage;        // 200x200 PNG
+  const splashBg =
+    process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR || "#000000";
+
+  const fcMiniApp = {
+    version: "1",
+    imageUrl: hero,
+    button: {
+      title: `Launch ${title}`,
+      action: {
+        type: "launch_frame",
+        name: title,
+        url: SITE_URL,
+        splashImageUrl: splash,
+        splashBackgroundColor: splashBg,
+      },
+    },
+  };
+
+  const fcFrame = {
+    version: "next",
+    imageUrl: hero,
+    button: {
+      title: `Launch ${title}`,
+      action: {
+        type: "launch_frame",
+        name: title,
+        url: SITE_URL,
+        splashImageUrl: splash,
+        splashBackgroundColor: splashBg,
+      },
+    },
+  };
 
   return {
-    title:
-      process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Based Burnie Mini App",
-    description:
-      process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
-      "Vote with $BURN in the BurnieVerse",
+    title,
+    description,
+    metadataBase: new URL(SITE_URL),
     icons: {
       icon: "/favicon.ico",
       shortcut: "/favicon.ico",
@@ -46,46 +81,23 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       type: "website",
-      url: URL,
-      title:
-        process.env.NEXT_PUBLIC_APP_OG_TITLE || "Based Burnie Mini App",
+      url: SITE_URL,
+      title: process.env.NEXT_PUBLIC_APP_OG_TITLE || title,
       description:
-        process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION ||
-        "Vote with $BURN in the BurnieVerse",
+        process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION || description,
       images: [{ url: ogImage, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
-      title:
-        process.env.NEXT_PUBLIC_APP_OG_TITLE || "Based Burnie Mini App",
+      title: process.env.NEXT_PUBLIC_APP_OG_TITLE || title,
       description:
-        process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION ||
-        "Vote with $BURN in the BurnieVerse",
+        process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION || description,
       images: [ogImage],
       creator: "@BasedBurnie",
     },
     other: {
-      "fc:frame": JSON.stringify({
-        version: "next",
-        imageUrl: hero,
-        button: {
-          title: `Launch ${
-            process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-            "Based Burnie Mini App"
-          }`,
-          action: {
-            type: "launch_frame",
-            name:
-              process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME ||
-              "Based Burnie Mini App",
-            url: URL,
-            splashImageUrl:
-              process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE || ogImage,
-            splashBackgroundColor:
-              process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR || "#000000",
-          },
-        },
-      }),
+      "fc:miniapp": JSON.stringify(fcMiniApp),
+      "fc:frame": JSON.stringify(fcFrame),
     },
   };
 }
@@ -103,10 +115,11 @@ export default function RootLayout({
           {`globalThis.litDevMode = false;`}
         </Script>
 
+        {/* Mobile/web-app niceties */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="format-detection" content="telephone=no" />
+        <meta name="format-detection" content="telephone=no" />
 
-        {/* Fallback OG/Twitter for older crawlers */}
+        {/* Basic fallbacks for older crawlers */}
         <meta property="og:title" content="Based Burnie Mini App" />
         <meta
           property="og:description"
@@ -114,6 +127,8 @@ export default function RootLayout({
         />
         <meta property="og:image" content="/burnie-og.png" />
         <meta name="twitter:card" content="summary_large_image" />
+
+        {/* PWA / manifest */}
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>

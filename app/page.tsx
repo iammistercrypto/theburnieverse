@@ -170,6 +170,14 @@ const wcDarkVars: WcThemeVars = {
   "--wcm-z-index": "2147483647",
 };
 
+function inWarpcastWebview(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = window.navigator?.userAgent ?? "";
+  // Warpcast UA typically contains "Warpcast" or "Farcaster"
+  return /Warpcast|Farcaster/i.test(ua);
+}
+
+
 /* ---------- Ignite ripple helper ---------- */
 const ignite = (e: React.MouseEvent<HTMLElement | Element>) => {
   const t = e.currentTarget as HTMLElement;
@@ -297,12 +305,14 @@ async function openCoinbaseWalletSwap(params: {
     }
 
     // 🔵 3. Regular browser → try CW deeplink first, then Uniswap fallback
-    const deeplink = `cbwallet://wallet/swap?to=${encodeURIComponent(
-      params.to
-    )}&chainId=${params.chainId}&amount=${encodeURIComponent(swapArgs.amount)}`;
+    const deeplinkApp = `cbwallet://wallet/swap?to=${encodeURIComponent(params.to)}&chainId=${params.chainId}&amount=${encodeURIComponent(swapArgs.amount)}&inputCurrency=ETH&outputCurrency=${encodeURIComponent(params.to)}`;
+const deeplinkHttps = `https://go.cb-w.com/wallet/swap?to=${encodeURIComponent(params.to)}&chainId=${params.chainId}&amount=${encodeURIComponent(swapArgs.amount)}&inputCurrency=ETH&outputCurrency=${encodeURIComponent(params.to)}`;
 
-    // Try to trigger Coinbase Wallet
-    window.location.assign(deeplink);
+// Try app protocol first; if blocked, fall back to HTTPS universal link
+const t = setTimeout(() => { window.location.assign(deeplinkHttps); }, 400);
+window.location.assign(deeplinkApp);
+setTimeout(() => clearTimeout(t), 1500);
+
 
     // Fallback to Uniswap if deeplink does nothing after 1s
     setTimeout(() => {
@@ -321,10 +331,16 @@ async function openCoinbaseWalletSwap(params: {
 /* ---------- Page ---------- */
 export default function App() {
   useSparkTrail(true);
-  // Tell the Base App we’re ready once the frame is mounted
+ // Tell the Base App we’re ready once the frame is mounted
 const { setFrameReady, isFrameReady } = useMiniKit();
+
 useEffect(() => {
-  if (!isFrameReady) setFrameReady();
+  // Only call once after mount; guard against re-calls
+  if (!isFrameReady) {
+    // Let the UI paint first to avoid double-initialization warnings
+    requestAnimationFrame(() => setFrameReady());
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [isFrameReady, setFrameReady]);
 
   const [balance, setBalance] = useState("0");
@@ -396,49 +412,51 @@ const { openConnectModal } = useConnectModal();
     });
   }, [wcProjectId]);
   async function openWalletConnect(e?: React.MouseEvent) {
-    try {
-      if (e) ignite(e);
-      if (isMiniApp || isCwWebview) {
-        setNotification({
-          message: "WalletConnect not needed in Coinbase Wallet.",
-          type: "info",
-        });
+  try {
+    if (e) ignite(e);
+
+    // A) If we’re in Coinbase Mini App or CW dapp browser, WC isn’t needed
+    if (isMiniApp || isCwWebview) {
+      setNotification({ message: "WalletConnect not needed in Coinbase Wallet.", type: "info" });
+      return;
+    }
+
+    // B) On mobile (incl. Warpcast webview), prefer the RainbowKit connect modal
+    if (typeof window !== "undefined" && /Mobi|Android/i.test(navigator.userAgent)) {
+      if (openConnectModal) {
+        openConnectModal();
         return;
-      }
-      if (!wcConnector) {
-        setNotification({
-          message: "WalletConnect is not configured.",
-          type: "error",
-        });
-        return;
-      }
-      await connect({ connector: wcConnector });
-    } catch (err) {
-      if (!wcProjectId || isMiniApp || isCwWebview) return;
-      try {
-        const mod = await import("@walletconnect/modal");
-
-// Only create once
-if (!(window as any).walletConnectModal) {
-  (window as any).walletConnectModal = new mod.WalletConnectModal({
-    projectId: wcProjectId,
-    themeMode: "dark",
-    explorerRecommendedWalletIds: "NONE",
-    themeVariables: wcDarkVars, // ✅ strongly typed locally
-  });
-}
-
-await (window as any).walletConnectModal.openModal();
-
-
-      } catch {
-        setNotification({
-          message: "Couldn’t open WalletConnect. Please check configuration.",
-          type: "error",
-        });
       }
     }
+
+    // C) Desktop (or fallback) → connect via WC programmatically
+    if (!wcConnector) {
+      setNotification({ message: "WalletConnect is not configured.", type: "error" });
+      return;
+    }
+    await connect({ connector: wcConnector });
+  } catch (err) {
+    // D) As a last resort, show the WalletConnect QR modal (desktop)
+    if (!wcProjectId || isMiniApp || isCwWebview) return;
+    try {
+      const mod = await import("@walletconnect/modal");
+
+      if (!(window as any).walletConnectModal) {
+        (window as any).walletConnectModal = new mod.WalletConnectModal({
+          projectId: wcProjectId,
+          themeMode: "dark",
+          explorerRecommendedWalletIds: "NONE",
+          themeVariables: wcDarkVars,
+        });
+      }
+
+      await (window as any).walletConnectModal.openModal();
+    } catch {
+      setNotification({ message: "Couldn’t open WalletConnect. Please check configuration.", type: "error" });
+    }
   }
+}
+
   async function openCoinbaseWallet(e?: React.MouseEvent) {
     try {
       if (e) ignite(e);
