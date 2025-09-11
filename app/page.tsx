@@ -264,61 +264,77 @@ function inCoinbaseAppWebview(): boolean {
   return /Coinbase/i.test(ua) && !/CoinbaseWallet/i.test(ua);
 }
 async function openCoinbaseWalletSwap(params: {
-  to: string;
-  chainId: number;
-  amount?: string;
+  to: string;          // $BURN address (checksummed)
+  chainId: number;     // 8453 (Base)
+  amount?: string;     // e.g. "0.01"
 }): Promise<{ ok: boolean; reason?: string }> {
   if (typeof window === "undefined") {
     return { ok: false, reason: "Client-side only" };
   }
 
   try {
-    const swapArgs = {
-      to: params.to,
-      chainId: params.chainId,
-      amount: params.amount || "0.01",
-      inputCurrency: NATIVE_ETH,
-      outputCurrency: params.to,
-    };
+    const amount = params.amount && Number(params.amount) > 0 ? params.amount : "0.01";
+    const outputCurrency = params.to; // $BURN
+    const inputCurrency = "ETH";      // user can change in-wallet
+    const chainId = params.chainId;
 
-    // 🟢 1. Coinbase Mini App tab → native swap sheet
-    const mini = (window as any).miniapp || (window as any).MiniApp;
+    // 1) Inside Coinbase Wallet Mini App → open native swap sheet
+    const mini = (window as any).miniapp || (window as any).MiniApp || (window as any).__CBW_MINIAPP__;
     if (mini?.wallet) {
-      if (typeof mini.wallet.swap === "function") {
-        await mini.wallet.swap(swapArgs);
-        return { ok: true };
-      }
       if (typeof mini.wallet.open === "function") {
-        await mini.wallet.open({ route: "swap", ...swapArgs });
+        await mini.wallet.open({
+          route: "swap",
+          inputCurrency,
+          outputCurrency,
+          amount,
+          chainId,
+        });
+        return { ok: true };
+      }
+      if (typeof mini.wallet.swap === "function") {
+        await mini.wallet.swap({
+          inputCurrency,
+          outputCurrency,
+          amount,
+          chainId,
+        });
         return { ok: true };
       }
     }
 
-    // 🟠 2. Coinbase Wallet browser → use Uniswap fallback
-    if (inCoinbaseWalletDappBrowser()) {
-      const uniswapUrl = `https://app.uniswap.org/#/swap?chain=base&inputCurrency=ETH&outputCurrency=${params.to}&exactAmount=${swapArgs.amount}`;
-      window.open(uniswapUrl, "_blank");
-      return {
-        ok: true,
-        reason: "Opened Uniswap fallback inside Coinbase Wallet browser",
-      };
+    // 2) Not in Mini App → deep link to Coinbase Wallet Swap
+    const appUrl = `cbwallet://wallet/swap` +
+      `?inputCurrency=${encodeURIComponent(inputCurrency)}` +
+      `&outputCurrency=${encodeURIComponent(outputCurrency)}` +
+      `&amount=${encodeURIComponent(amount)}` +
+      `&chainId=${encodeURIComponent(String(chainId))}`;
+
+    const httpsUrl = `https://go.cb-w.com/wallet/swap` +
+      `?inputCurrency=${encodeURIComponent(inputCurrency)}` +
+      `&outputCurrency=${encodeURIComponent(outputCurrency)}` +
+      `&amount=${encodeURIComponent(amount)}` +
+      `&chainId=${encodeURIComponent(String(chainId))}`;
+
+    // Try app scheme, then universal link as fallback
+    const fallback = setTimeout(() => {
+      try { window.location.assign(httpsUrl); } catch {}
+    }, 450);
+
+    try {
+      window.location.assign(appUrl);
+    } catch {
+      clearTimeout(fallback);
+      window.location.assign(httpsUrl);
     }
 
-    // 🔵 3. Regular browser → try CW deeplink first, then Uniswap fallback
-    const deeplinkApp = `cbwallet://wallet/swap?to=${encodeURIComponent(params.to)}&chainId=${params.chainId}&amount=${encodeURIComponent(swapArgs.amount)}&inputCurrency=ETH&outputCurrency=${encodeURIComponent(params.to)}`;
-const deeplinkHttps = `https://go.cb-w.com/wallet/swap?to=${encodeURIComponent(params.to)}&chainId=${params.chainId}&amount=${encodeURIComponent(swapArgs.amount)}&inputCurrency=ETH&outputCurrency=${encodeURIComponent(params.to)}`;
-
-// Try app protocol first; if blocked, fall back to HTTPS universal link
-const t = setTimeout(() => { window.location.assign(deeplinkHttps); }, 400);
-window.location.assign(deeplinkApp);
-setTimeout(() => clearTimeout(t), 1500);
-
-
-    // Fallback to Uniswap if deeplink does nothing after 1s
+    // 3) Still visible after ~1s? open Uniswap fallback
     setTimeout(() => {
       if (document.visibilityState === "visible") {
-        const uniswapUrl = `https://app.uniswap.org/#/swap?chain=base&inputCurrency=ETH&outputCurrency=${params.to}&exactAmount=${swapArgs.amount}`;
-        window.open(uniswapUrl, "_blank");
+        const uni = `https://app.uniswap.org/#/swap?chain=base` +
+          `&inputCurrency=${encodeURIComponent(inputCurrency)}` +
+          `&outputCurrency=${encodeURIComponent(outputCurrency)}` +
+          `&exactAmount=${encodeURIComponent(amount)}`;
+        window.open(uni, "_blank");
       }
     }, 1000);
 
@@ -1977,14 +1993,27 @@ async function handleBuyBurnClick(
                   onClick={() => {
                     track("swap_deeplink");
                     const amt = Number(swapAmount || "0") || 0.01;
-                    const deeplink = `cbwallet://wallet/swap?to=${encodeURIComponent(
-                      BURN_ADDRESS
-                    )}&chainId=${BASE_CHAIN_ID}&amount=${encodeURIComponent(
-                      String(amt)
-                    )}`;
-                    if (typeof window !== "undefined") {
-                      window.location.assign(deeplink);
-                    }
+                    const amount = Number(swapAmount || "0") || 0.01;
+const appUrl = `cbwallet://wallet/swap` +
+  `?inputCurrency=ETH` +
+  `&outputCurrency=${encodeURIComponent(BURN_ADDRESS)}` +
+  `&amount=${encodeURIComponent(String(amount))}` +
+  `&chainId=${encodeURIComponent(String(BASE_CHAIN_ID))}`;
+
+const httpsUrl = `https://go.cb-w.com/wallet/swap` +
+  `?inputCurrency=ETH` +
+  `&outputCurrency=${encodeURIComponent(BURN_ADDRESS)}` +
+  `&amount=${encodeURIComponent(String(amount))}` +
+  `&chainId=${encodeURIComponent(String(BASE_CHAIN_ID))}`;
+
+const t = setTimeout(() => { try { window.location.assign(httpsUrl); } catch {} }, 450);
+try {
+  window.location.assign(appUrl);
+} catch {
+  clearTimeout(t);
+  window.location.assign(httpsUrl);
+}
+
                   }}
                   title="Open in Coinbase Wallet"
                 >
