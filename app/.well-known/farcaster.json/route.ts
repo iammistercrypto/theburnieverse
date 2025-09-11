@@ -72,20 +72,18 @@ export async function GET(req: Request) {
     // screenshotUrls: [`${origin}/shot-1.png`, `${origin}/shot-2.png`], // 1284x2778
   });
 
-  const body = {
+    const body = {
     accountAssociation: {
       header: process.env.FARCASTER_HEADER,
       payload: process.env.FARCASTER_PAYLOAD,
       signature: process.env.FARCASTER_SIGNATURE,
     },
-    // ✅ New key expected by the latest spec
-    miniapp: common,
-    // ↔︎ Back-compat for older consumers still reading `frame`
     frame: common,
     baseBuilder: {
       allowedAddresses: allowed,
     },
   };
+
 
   return json(body);
 }
