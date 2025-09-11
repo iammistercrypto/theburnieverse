@@ -26,64 +26,81 @@ function json(body: unknown, status = 200) {
 export async function GET(req: Request) {
   const origin = process.env.NEXT_PUBLIC_URL || new URL(req.url).origin;
 
-  // Optional allowlist for Base Builder
+  // Base Builder allowlist (comma-separated)
   const allowed =
     (process.env.NEXT_PUBLIC_BASE_BUILDER_ADDRESS || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
 
+  // Required: discovery tags (lowercase, <=20 chars, no spaces)
   const tags =
     (process.env.NEXT_PUBLIC_APP_TAGS || '')
       .split(',')
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
-  // Use PNG assets hosted on YOUR domain (recommended)
+  // Optional: screenshots (comma-separated). Accept absolute or /public paths.
+  const screenshots =
+    (process.env.NEXT_PUBLIC_APP_SCREENSHOTS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  // Prefer YOUR domain assets over third-party hosts
   const iconUrl =
-    process.env.NEXT_PUBLIC_APP_ICON || `${origin}/icon-1024.png`;          // 1024x1024 PNG (no alpha)
+    process.env.NEXT_PUBLIC_APP_ICON || `${origin}/icon-1024.png`;        // 1024x1024 PNG
   const splashImageUrl =
-    process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE || `${origin}/splash-200.png`; // 200x200 PNG
+    process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE || `${origin}/splash-200.png`; // ~200x200 PNG
   const heroImageUrl =
-    process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${origin}/burnie-og.png`;     // 1200x630 PNG
+    process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${origin}/burnie-og.png`;     // 1200x630
   const ogImageUrl =
-    process.env.NEXT_PUBLIC_APP_OG_IMAGE || `${origin}/burnie-og.png`;       // 1200x630 PNG
+    process.env.NEXT_PUBLIC_APP_OG_IMAGE || `${origin}/burnie-og.png`;       // 1200x630
 
   const common = withValidProperties({
+    // Identity & launch
     version: '1',
     name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || 'BurnieVerse',
-    subtitle: process.env.NEXT_PUBLIC_APP_SUBTITLE,
-    description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
     homeUrl: origin,
     iconUrl,
+    // Splash
     splashImageUrl,
     splashBackgroundColor:
       process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR || '#000000',
+    // Discovery
     primaryCategory:
       process.env.NEXT_PUBLIC_APP_PRIMARY_CATEGORY || 'entertainment',
-    tags,
-    heroImageUrl,
+    tags, // ✅ now included
+    noindex: false, // keep discoverable in production
+    // Display info
+    subtitle: process.env.NEXT_PUBLIC_APP_SUBTITLE,
+    description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
     tagline: process.env.NEXT_PUBLIC_APP_TAGLINE,
+    heroImageUrl,
+    // OG / social
     ogTitle: process.env.NEXT_PUBLIC_APP_OG_TITLE || 'BurnieVerse',
     ogDescription: process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION,
     ogImageUrl,
-    noindex: false,
+    // Optional extras
     // requiredChains: ['eip155:8453'], // enable if you want to declare Base mainnet explicitly
-    // screenshotUrls: [`${origin}/shot-1.png`, `${origin}/shot-2.png`], // 1284x2778
+    screenshotUrls: screenshots.length
+      ? screenshots.map((s) => (s.startsWith('http') ? s : `${origin}${s}`))
+      : undefined,
+    castShareUrl: process.env.NEXT_PUBLIC_CAST_SHARE_URL,
   });
 
-    const body = {
+  const body = {
     accountAssociation: {
       header: process.env.FARCASTER_HEADER,
       payload: process.env.FARCASTER_PAYLOAD,
       signature: process.env.FARCASTER_SIGNATURE,
     },
+    // Return only `frame` (Base.dev rejects manifests containing both `frame` and `miniapp`)
     frame: common,
     baseBuilder: {
       allowedAddresses: allowed,
     },
   };
-
 
   return json(body);
 }
